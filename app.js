@@ -94,17 +94,23 @@ function createPeer() {
   });
 
   peer.on("open", id => {
-    const link = `${location.origin}${location.pathname}?peer=${encodeURIComponent(id)}`;
-    generateQR(link);
+    // Le QR code ne doit apparaître qu'après l'ajout d'au moins un fichier.
+    // On garde simplement l'identifiant de session prêt en mémoire.
+    refreshQR();
   });
 
   peer.on("connection", conn => {
     connection = conn;
+
+    // Chaque nouvelle connexion / actualisation du mobile démarre
+    // visuellement un nouveau transfert.
+    resetTransferProgress();
+
     conn.on("open", () => {
       if (!files.length) return;
       $("#transferPanel").classList.remove("hidden");
       $("#transferStatus").textContent = "Mobile connecté";
-      $("#progressText").textContent = "Envoi des informations…";
+      $("#progressText").textContent = "Préparation des fichiers…";
       conn.send({ type: "manifest", files: files.map(f => ({ name: f.name, size: f.size, type: f.type || "application/octet-stream" })) });
     });
     conn.on("data", handleSenderMessage);
@@ -137,6 +143,7 @@ function generateQR(link) {
 }
 
 function refreshQR() {
+  // Aucun fichier = aucun QR code.
   if (!files.length) {
     $("#qrEmpty").classList.remove("hidden");
     $("#qrReady").classList.add("hidden");
@@ -145,10 +152,17 @@ function refreshQR() {
     $("#transferPanel").classList.add("hidden");
     return;
   }
-  if (peer?.id) {
-    const link = `${location.origin}${location.pathname}?peer=${encodeURIComponent(peer.id)}`;
-    generateQR(link);
+
+  // Le peer doit être prêt avant de pouvoir créer le lien.
+  if (!peer?.id) {
+    $("#qrEmpty").classList.remove("hidden");
+    $("#qrReady").classList.add("hidden");
+    $("#readyBadge").textContent = "Préparation…";
+    return;
   }
+
+  const link = `${location.origin}${location.pathname}?peer=${encodeURIComponent(peer.id)}`;
+  generateQR(link);
   $("#transferPanel").classList.remove("hidden");
 }
 
@@ -198,12 +212,30 @@ async function sendAllFiles() {
 
 function handleSenderMessage(message) {
   if (message?.type === "ready") {
+    resetTransferProgress();
     $("#transferStatus").textContent = "Transfert en cours";
     sendAllFiles();
   }
   if (message?.type === "received") {
     $("#progressText").textContent = `Fichier ${message.index + 1} reçu sur le mobile.`;
   }
+}
+
+function resetTransferProgress() {
+  const bar = $("#progressBar");
+
+  // Transition courte vers 0 pour rendre le nouveau transfert perceptible.
+  bar.style.transition = "width .18s ease";
+  bar.style.width = "0%";
+  $("#progressPercent").textContent = "0%";
+  $("#transferStatus").textContent = "Nouveau transfert";
+  $("#progressText").textContent = "Préparation des fichiers…";
+
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      bar.style.transition = "width .25s ease";
+    });
+  });
 }
 
 function setProgress(percent) {
