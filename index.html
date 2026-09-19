@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#05070D">
+  <meta name="description" content="Transférez des documents d'un ordinateur vers un mobile avec un simple QR code.">
+  <title>DropLink — PC → Mobile</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="ambient ambient-one"></div>
+  <div class="ambient ambient-two"></div>
+
+  <main class="app-shell">
+    <header class="topbar">
+      <a class="brand" href="./" aria-label="DropLink accueil">
+        <span class="brand-mark">↗</span>
+        <span>DropLink</span>
+      </a>
+      <div class="connection-pill">
+        <span class="status-dot"></span>
+        <span>Connexion directe</span>
+      </div>
+    </header>
+
+    <section id="senderView" class="view">
+      <div class="hero">
+        <div class="eyebrow">PC → MOBILE</div>
+        <h1>Envoyez vos fichiers.<br><span>Scannez. Téléchargez.</span></h1>
+        <p class="hero-copy">Déposez un ou plusieurs documents. Un QR code privé est créé instantanément pour les récupérer depuis un téléphone ou une tablette.</p>
+      </div>
+
+      <div class="workspace">
+        <section class="glass-card upload-card" aria-labelledby="uploadTitle">
+          <div class="card-head">
+            <div>
+              <div class="card-kicker">01</div>
+              <h2 id="uploadTitle">Vos documents</h2>
+            </div>
+            <span id="fileCount" class="count-badge">0 fichier</span>
+          </div>
+
+          <label id="dropzone" class="dropzone" for="fileInput" tabindex="0">
+            <input id="fileInput" type="file" multiple hidden>
+            <div class="drop-icon">↑</div>
+            <strong>Déposez vos fichiers ici</strong>
+            <span>ou cliquez pour parcourir votre ordinateur</span>
+            <small>PDF, DOCX, images, ZIP…</small>
+          </label>
+
+          <div id="fileList" class="file-list" aria-live="polite"></div>
+        </section>
+
+        <aside class="glass-card qr-card" aria-labelledby="qrTitle">
+          <div class="card-head">
+            <div>
+              <div class="card-kicker">02</div>
+              <h2 id="qrTitle">QR code</h2>
+            </div>
+            <span id="readyBadge" class="state-badge">En attente</span>
+          </div>
+
+          <div id="qrEmpty" class="qr-empty">
+            <div class="qr-placeholder">
+              <span>⌁</span>
+            </div>
+            <p>Ajoutez au moins un fichier pour générer votre QR code.</p>
+          </div>
+
+          <div id="qrReady" class="qr-ready hidden">
+            <div class="qr-frame">
+              <canvas id="qrCanvas" aria-label="QR code de transfert"></canvas>
+            </div>
+            <div class="qr-caption">
+              <strong>Scannez avec votre mobile</strong>
+              <span>Gardez cette page ouverte pendant le transfert.</span>
+            </div>
+            <button id="copyLink" class="btn secondary" type="button">Copier le lien</button>
+          </div>
+        </aside>
+      </div>
+
+      <section id="transferPanel" class="glass-card transfer-card hidden">
+        <div class="transfer-header">
+          <div>
+            <div class="card-kicker">03</div>
+            <h2>Transfert</h2>
+          </div>
+          <span id="transferStatus" class="transfer-status">En attente du mobile</span>
+        </div>
+        <div class="progress-track"><div id="progressBar" class="progress-bar"></div></div>
+        <div class="transfer-meta">
+          <span id="progressText">Scannez le QR code avec votre téléphone.</span>
+          <span id="progressPercent">0%</span>
+        </div>
+      </section>
+
+      <footer>
+        <span>DropLink</span>
+        <span>•</span>
+        <span>Transfert pair-à-pair</span>
+      </footer>
+    </section>
+
+    <section id="receiverView" class="view hidden">
+      <div class="receiver-wrap">
+        <div class="hero receiver-hero">
+          <div class="eyebrow">MOBILE</div>
+          <h1>Vos fichiers<br><span>sont prêts.</span></h1>
+          <p class="hero-copy">Le transfert se fait directement depuis l'appareil qui a créé ce QR code.</p>
+        </div>
+
+        <section class="glass-card receiver-card">
+          <div id="receiverConnecting" class="receiver-state">
+            <div class="spinner"></div>
+            <h2>Connexion sécurisée…</h2>
+            <p id="receiverConnectionText">Connexion à l'appareil source.</p>
+          </div>
+
+          <div id="receiverFiles" class="hidden">
+            <div class="receiver-head">
+              <div>
+                <div class="card-kicker">DOCUMENTS</div>
+                <h2 id="receiverTitle">Fichiers disponibles</h2>
+              </div>
+              <span id="receiverCount" class="count-badge">0 fichier</span>
+            </div>
+            <div id="receivedList" class="received-list"></div>
+            <button id="downloadAll" class="btn primary full" type="button">Télécharger tout</button>
+          </div>
+
+          <div id="receiverError" class="hidden error-state">
+            <div class="error-icon">!</div>
+            <h2>Impossible de se connecter</h2>
+            <p id="receiverErrorText">Le lien est peut-être expiré ou l'appareil source a fermé la page.</p>
+            <a class="btn secondary" href="./">Retour</a>
+          </div>
+        </section>
+      </div>
+      <footer>
+        <span>DropLink</span>
+        <span>•</span>
+        <span>Fermez cette page après téléchargement</span>
+      </footer>
+    </section>
+  </main>
+
+  <div id="toast" class="toast" role="status"></div>
+
+  <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
